@@ -1,0 +1,14 @@
+Private Function FileNameOnly(pname) As String
+'   Returns the filename from a path/filename string
+    Dim i As Integer, length As Integer, temp As String
+    length = Len(pname)
+    temp = ""
+    For i = length To 1 Step -1
+        If Mid(pname, i, 1) = Application.PathSeparator Then
+            FileNameOnly = temp
+            Exit Function
+        End If
+        temp = Mid(pname, i, 1) & temp
+    Next i
+    FileNameOnly = pname
+End Function

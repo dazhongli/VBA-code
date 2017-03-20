@@ -1,0 +1,6 @@
+' The below line shows the method for the automatic iteration 
+' Range ("R170") is the cell we would be intersted
+' Changingcell is the cell that holds varible we would like to vary to achieve the goal.
+' Dazhong 25/08/2015
+
+Range("R170").GoalSeek goal:=0, changingcell:=Range("Sp_t1")

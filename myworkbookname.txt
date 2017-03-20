@@ -1,0 +1,6 @@
+Function myworkbookname() As String
+    application.volatile
+    Dim filename As String
+    filename = ThisWorkbook.Name
+    myworkbookname = Left(filename, InStr(filename, ".") - 1)
+End Function

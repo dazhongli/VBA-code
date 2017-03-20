@@ -1,0 +1,4 @@
+
+start_time = Timer
+end_time = Timer
+MsgBox "Total Time Elapsed = " & Application.WorksheetFunction.Text(end_time - start_time, "0") & " Seconds!", vbInformation

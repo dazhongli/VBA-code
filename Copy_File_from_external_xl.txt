@@ -1,0 +1,17 @@
+   Dim wb_target, wb_source As Workbook
+    Set wb_target = ThisWorkbook
+    Set wb_source = Workbooks.Open(ThisWorkbook.Path & "\Raw Data\" & sfilename & ".xls")
+    Dim ws_target, ws_source As Worksheet
+    Set ws_source = wb_source.Sheets("Data")
+    Set ws_target = wb_target.Sheets(sfilename)
+    ws_target.Range("D2:D6000").ClearContents
+    ws_target.Range("F2:F6000").ClearContents
+    'clear anything on the clipboard the maximize the capacity for copy
+    Application.CutCopyMode = False
+    last_row = ws_source.Range("A1").End(xlDown).Row
+    ws_source.Range(Cells(3, 1), Cells(last_row, 1)).Copy
+    ws_target.Range("D2").PasteSpecial
+    ws_source.Range(Cells(3, 14), Cells(last_row, 14)).Copy
+    ws_target.Range("F2").PasteSpecial
+    Application.DisplayAlerts = False
+    wb_source.Close

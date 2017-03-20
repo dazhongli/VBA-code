@@ -1,0 +1,6 @@
+Function MyWorksheetName()
+   application.volatile
+
+   MyWorksheetName = Application.Caller.Worksheet.Name
+
+End Function

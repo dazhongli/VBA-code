@@ -1,0 +1,4 @@
+Function Open_txt_file(file_name as string)
+    file_name = Environ("userprofile") & "\Dropbox\back up files\VBA Functions\" & Me.cmb_file_name.Value
+    vPID = Shell("notepad.exe " & file_name & "", vbNormalFocus)
+End Sub

@@ -1,0 +1,65 @@
+'This function find interpolation from two columns
+' Input_value the x value
+' Index_range, the column contains the discrete value of x
+' object_range, the column containing that discrete value of y
+'By Dazhong 07/09/2015
+
+Public Function Interpolation(ByVal Input_value As Variant, ByRef Index_range As Range, ByRef Object_Range As Range, Optional search_key As Integer = 1)
+    Dim ub_index, lb_index As Integer
+    Dim lb_index_val, ub_index_val, lb_obj_val, ub_obj_val As Variant
+    
+    With Application.WorksheetFunction
+        On Error GoTo Error_handler
+        lb_index = .Match(Input_value, Index_range, search_key)
+        ub_index = lb_index + 1
+        If lb_index = Index_range.Rows.Count Then
+            ub_index = lb_index
+            Interpolation = .Index(Object_Range, lb_index, 0)
+            Exit Function
+        End If
+        Dim nData As Long
+        nData = Application.WorksheetFunction.Count(Object_Range)
+        
+        lb_index_val = .Index(Index_range, lb_index, 0)
+        ub_index_val = .Index(Index_range, ub_index, 0)
+        lb_obj_val = .Index(Object_Range, lb_index, 0)
+        ub_obj_val = .Index(Object_Range, ub_index, 0)
+        'skip the error cell for the lower bound
+        Do While IsError(lb_obj_val)
+            lb_index = lb_index - 1
+            lb_index_val = .Index(Index_range, lb_index, 0)
+            lb_obj_val = .Index(Object_Range, lb_index, 0)
+            If lb_index < 1 Then ' if error occurs at the end of the data array, return the last value
+                Interpolation = CVErr(xlErrNA)
+                Exit Function
+            End If
+        Loop
+        'skip the error cell for the upper bound
+        Do While IsError(ub_obj_val) Or IsError(ub_index_val)
+            ub_index = ub_index + 1
+            ub_index_val = .Index(Index_range, ub_index, 0)
+            ub_obj_val = .Index(Object_Range, ub_index, 0)
+            If ub_index > nData Then ' if error occurs at the end of the data array, return the last value
+                Interpolation = lb_obj_val
+                Exit Function
+            End If
+        Loop
+        'We are going to handle descriptive values here
+        If Application.IsText(lb_obj_val) Or Application.IsText(ub_obj_val) Then
+            Interpolation = lb_obj_val & " ~ " & ub_obj_val
+            Exit Function
+        End If
+        If VarType(Input_value) = vbDate Then
+            Interpolation = lb_obj_val + (ub_obj_val - lb_obj_val) / .Days360(lb_index_val, ub_index_val) * (.Days360(lb_index_val, Input_value))
+        Else
+            Interpolation = lb_obj_val + (ub_obj_val - lb_obj_val) / (ub_index_val - lb_index_val) * (Input_value - lb_index_val)
+        End If
+        
+        If IsError(Interpolation) Then
+            Interpolation = 0
+        End If
+    End With
+    exit function
+Error_handler:
+    Interpolation = Object_Range(1)
+End Function

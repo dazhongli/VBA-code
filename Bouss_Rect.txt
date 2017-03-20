@@ -1,0 +1,26 @@
+'This function returns the stress factor "I" for the rectangle loading 
+'Stress level is calculated as below the corner of the rectangular loading
+'Width - width of the loading
+'Length - lengh of the loading
+'depth - depth (z) of the study area
+'stress level at z is expressed as p *Iz
+'by Dazhong, 20150824
+
+Const PI = 3.1415926
+
+ Function Bouss_rect(width As Double, length As Double, depth As Double)
+    Dim pv, pv1 As Double
+    pM = width / depth
+    pN = length / depth
+    pv = pM ^ 2 + pN ^ 2 + 1
+    pv1 = (pM * pN) ^ 2
+    Dim c1, c2, c3 As Double
+    c1 = 2# * pM * pN * Math.Sqr(pv) / (pv + pv1)
+    c2 = (pv + 1) / pv
+    c3 = (2# * pM * pN * Math.Sqr(pv)) / (pv - pv1)
+    If pv1 >= pv Then
+        Bouss_rect = 1 / (4# * PI) * ((c1 * c2) + Math.Atn(c3) + PI)
+    Else
+        Bouss_rect = 1 / (4# * PI) * ((c1 * c2) + Math.Atn(c3))
+    End If
+End Function

@@ -1,0 +1,46 @@
+Sub Add_Alluvium_Curve()
+    Dim ws_plot_name As String
+    Dim ws_data_name As String
+    ws_plot_name = ActiveSheet.Name
+    ws_data_name = ws_plot_name & "-1"
+    Sheets(ws_data_name).Activate
+    ActiveSheet.Range("H25:J27").Select
+    Selection.Replace What:="$C", Replacement:="$F", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+        
+    ActiveSheet.Range("A4:F7").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Range("AU4").Select
+    ActiveSheet.Paste
+    
+    Range("AU4:AZ4").Select
+    Selection.Replace What:="$D", Replacement:="$G", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    Range("AU4:AZ4").Select
+    Application.CutCopyMode = False
+    Selection.AutoFill Destination:=Range("AU4:AZ300")
+    Sheets(ws_plot_name).Activate
+
+    For i = 1 To 3
+        ActiveChart.SeriesCollection.NewSeries
+        LastIndex = ActiveChart.SeriesCollection.Count
+        If i = 1 Then
+            ActiveChart.SeriesCollection(LastIndex).Name = "VWP" & "No." & i & "(" & Sheets(ws_data_name).Range("J25") & "mPD" & ")"
+            ActiveChart.SeriesCollection(LastIndex).XValues = "=" & "'" & ws_data_name & "'" & "!$AU$4:$AU$300"
+            ActiveChart.SeriesCollection(LastIndex).Values = "=" & "'" & ws_data_name & "'" & "!$AV$4:$AV$300"
+        ElseIf i = 2 Then
+            ActiveChart.SeriesCollection(LastIndex).Name = "VWP" & "No." & i & "(" & Sheets(ws_data_name).Range("J26") & "mPD" & ")"
+            ActiveChart.SeriesCollection(LastIndex).XValues = "=" & "'" & ws_data_name & "'" & "!$Aw$4:$Aw$300"
+            ActiveChart.SeriesCollection(LastIndex).Values = "=" & "'" & ws_data_name & "'" & "!$Ax$4:$Ax$300"
+        ElseIf i = 3 Then
+            ActiveChart.SeriesCollection(LastIndex).Name = "VWP" & "No." & i & "(" & Sheets(ws_data_name).Range("J27") & "mPD" & ")"
+            ActiveChart.SeriesCollection(LastIndex).XValues = "=" & "'" & ws_data_name & "'" & "!$AY$4:$AY$300"
+            ActiveChart.SeriesCollection(LastIndex).Values = "=" & "'" & ws_data_name & "'" & "!$Az$4:$Az$300"
+        End If
+    Next i
+
+End Sub

@@ -1,0 +1,16 @@
+ 'PURPOSE: Copy a given text to the clipboard (using DataObject)
+    'SOURCE: www.TheSpreadsheetGuru.com
+    'NOTES: Must enable Forms Library: Checkmark Tools > References > Microsoft Forms 2.0 Object Library
+    
+    Dim obj As New DataObject
+    Dim txt As String
+    
+    
+    'Make object's text equal above string variable
+      obj.SetText Me.txt_VBA_Function.Value
+    
+    'Place DataObject's text into the Clipboard
+      obj.PutInClipboard
+    
+    'Notify User
+      MsgBox "There is now text copied to your clipboard!", vbInformation

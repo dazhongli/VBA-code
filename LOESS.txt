@@ -1,0 +1,96 @@
+Public Function LOESS(X As Variant, Y As Variant, xDomain As Variant, nPts As Long) As Double()
+  Dim i As Long
+  Dim iMin As Long
+  Dim iMax As Long
+  Dim iPoint As Long
+  Dim iMx As Long
+  Dim mx As Variant
+  Dim maxDist As Double
+  Dim SumWts As Double, SumWtX As Double, SumWtX2 As Double, SumWtY As Double, SumWtXY As Double
+  Dim Denom As Double, WLRSlope As Double, WLRIntercept As Double
+  Dim xNow As Double
+  Dim distance() As Double
+  Dim weight() As Double
+  Dim yLoess() As Double
+
+  If TypeName(X) = "Range" Then
+    X = X.Value
+  End If
+
+  If TypeName(Y) = "Range" Then
+    Y = Y.Value
+  End If
+
+  If TypeName(xDomain) = "Range" Then
+    xDomain = xDomain.Value
+  End If
+
+  ReDim yLoess(LBound(xDomain, 1) To UBound(xDomain, 1), 1 To 1)
+
+  For iPoint = LBound(xDomain, 1) To UBound(xDomain, 1)
+
+    iMin = LBound(X, 1)
+    iMax = UBound(X, 1)
+
+    xNow = xDomain(iPoint, 1)
+
+    ReDim distance(iMin To iMax)
+    ReDim weight(iMin To iMax)
+
+    For i = iMin To iMax
+      ' populate x, y, distance
+      distance(i) = Abs(X(i, 1) - xNow)
+    Next
+
+    Do
+      ' find the nPts points closest to xNow
+      If iMax + 1 - iMin <= nPts Then Exit Do
+      If distance(iMin) > distance(iMax) Then
+        ' remove first point
+        iMin = iMin + 1
+      ElseIf distance(iMin) < distance(iMax) Then
+        ' remove last point
+        iMax = iMax - 1
+      Else
+        ' remove both points?
+        iMin = iMin + 1
+        iMax = iMax - 1
+      End If
+    Loop
+
+    ' Find max distance
+    maxDist = -1
+    For i = iMin To iMax
+      If distance(i) > maxDist Then maxDist = distance(i)
+    Next
+
+    ' calculate weights using scaled distances
+    For i = iMin To iMax
+      weight(i) = (1 - (distance(i) / maxDist) ^ 3) ^ 3
+    Next
+
+    ' do the sums of squares
+    SumWts = 0
+    SumWtX = 0
+    SumWtX2 = 0
+    SumWtY = 0
+    SumWtXY = 0
+    For i = iMin To iMax
+      SumWts = SumWts + weight(i)
+      SumWtX = SumWtX + X(i, 1) * weight(i)
+      SumWtX2 = SumWtX2 + (X(i, 1) ^ 2) * weight(i)
+      SumWtY = SumWtY + Y(i, 1) * weight(i)
+      SumWtXY = SumWtXY + X(i, 1) * Y(i, 1) * weight(i)
+    Next
+    Denom = SumWts * SumWtX2 - SumWtX ^ 2
+
+    ' calculate the regression coefficients, and finally the loess value
+    WLRSlope = (SumWts * SumWtXY - SumWtX * SumWtY) / Denom
+    WLRIntercept = (SumWtX2 * SumWtY - SumWtX * SumWtXY) / Denom
+    yLoess(iPoint, 1) = WLRSlope * xNow + WLRIntercept
+
+  Next
+
+  LOESS = yLoess
+
+End Function

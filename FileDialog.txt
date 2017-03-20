@@ -1,0 +1,39 @@
+'This subroutine shows an example of using a file dialog box
+'The codes demonstrate how a filedialog and a FileSystemObject can be used together for automatically update a file. 
+
+'By Dazhong 26/08/2015 ambellstone@gmail.com
+
+Sub Pick_a_file_and_save_it_elsewhere()
+    Dim fso As Scripting.FileSystemObject
+    Set fso = New Scripting.FileSystemObject
+    Dim fd As FileDialog
+    Dim target_file As File
+    Dim sSourcefile, stargetfile As String
+    Dim filepicked As Boolean
+    
+    Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    Dim target_location As String
+    target_location = "Your location where file is to be saved"
+    Dim vwp_filename, sp_filename As String
+    fd.InitialFileName = "Initial Path for the source file"
+    filepicked = fd.Show
+    
+    If Not filepicked Then
+        Exit Sub
+    End If
+    
+    Dim selected_file As Variant
+    For Each selected_file In fd.SelectedItems
+        sSourcefile = selected_file
+    Next selected_file
+    
+   ' below codes save the files and pop up a msgbox..
+    Set target_file = fso.GetFile(sSourcefile)
+    If InStr(sSourcefile, "VWP") Then
+        target_file.Copy "Z:\PUBLIC SHARE\Dazhong Li\VWP Review\VWP(RA).xlsm"
+        MsgBox "Latest VWP data imported! Last Modifed date " & target_file.DateLastModified
+    Else
+        target_file.Copy "Z:\PUBLIC SHARE\Dazhong Li\VWP Review\SP.xlsm"
+        MsgBox "Latest SP data imported! Last Modifed date " & target_file.DateLastModified
+    End If
+End Sub

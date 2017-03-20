@@ -1,0 +1,6 @@
+'This function returns the clean filename without an ext
+Function FileName_wo_ext(filename As String)
+    Dim i As Integer
+    i = InStr(filename, ".")
+    FileName_wo_ext = Left(filename, i - 1)
+End Function

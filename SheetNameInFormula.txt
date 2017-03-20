@@ -1,0 +1,17 @@
+'This function extract the sheet name in a formula (external reference)
+'Dazhong 23/12/2015
+Function SheetNameInFormula(rng As Range)
+    Dim str_formula As String
+    str_formula = rng.Formula
+    SheetNameInFormula = Mid(str_formula, InStr(str_formula, "]") + 1, InStr(str_formula, "!") - InStr(str_formula, "]") - 2)
+    
+End Function
+
+
+'This function extract the workbook name in a formula (external reference)
+'Dazhong 23/12/2015
+Function workbookname_in_formula(rng As Range)
+    Dim str_formula As String
+    str_formula = rng.Formula
+    workbookname_in_formula = Mid(str_formula, InStr(str_formula, "[") + 1, InStr(str_formula, "]") - InStr(str_formula, "[") - 1)
+End Function

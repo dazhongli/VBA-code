@@ -1,0 +1,7 @@
+'This function returns the distance between two points
+'Points are input as ranges and dimensions are not limited. 
+
+Function dist(x As Range, y As Range) As Double
+    dist_sq = Application.SumXMY2(x, y)
+    dist = Sqr(dist_sq)
+End Function

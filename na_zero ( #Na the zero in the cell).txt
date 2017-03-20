@@ -1,0 +1,7 @@
+Function na_zero(val As Variant) As Variant
+    If val = 0 Then
+        na_zero = CVErr(xlErrNA)
+    Else
+        na_zero = val
+    End If
+End Function

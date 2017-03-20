@@ -1,0 +1,4 @@
+'Disable the display of aleregrep --color -nH -e 
+Application.DisplayAlerts = Tru
+e
+Application.DisplayAlerts = True

@@ -1,0 +1,10 @@
+'This function returns that stres factor for a strip loading
+'width - width of the strip loading
+'distance - the distance of the instrest point to the closese edge of the strip loading
+'depth - depth of point of study
+Function Bouss_strip(width As Double, distance As Double, depth As Double)
+    Dim alpha, delta As Integer
+    delta = Math.Atn(distance / depth)
+    alpha = Math.Atn((width + distance) / depth) - delta
+    Bouss_strip = 1 / 3.1415926 * (alpha + Sin(alpha) * Cos(alpha + 2# * delta))
+End Function

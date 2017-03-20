@@ -1,0 +1,103 @@
+'----- begin VBA -----
+ Function pull(xref As String) As Variant
+ 'inspired by Bob Phillips and Laurent Longre
+ 'but written by Harlan Grove
+ '-----------------------------------------------------------------
+ 'Copyright (c) 2003 Harlan Grove.
+ '
+ 'This code is free software; you can redistribute it and/or modify
+ 'it under the terms of the GNU General Public License as published
+ 'by the Free Software Foundation; either version 2 of the License,
+ 'or (at your option) any later version.
+ '-----------------------------------------------------------------
+ '2004-05-30
+ 'still more fixes, this time to address apparent differences between
+ 'XL8/97 and later versions. Specifically, fixed the InStrRev call,
+ 'which is fubar in later versions and was using my own hacked version
+ 'under XL8/97 which was using the wrong argument syntax. Also either
+ 'XL8/97 didn't choke on CStr(pull) called when pull referred to an
+ 'array while later versions do, or I never tested the 2004-03-25 fix
+ 'against multiple cell references.
+ '-----------------------------------------------------------------
+
+'2004-05-28
+ 'fixed the previous fix - replaced all instances of 'expr' with 'xref'
+ 'also now checking for initial single quote in xref, and if found
+ 'advancing past it to get the full pathname [dumb, really dumb!]
+ '-----------------------------------------------------------------
+ '2004-03-25
+ 'revised to check if filename in xref exists - if it does, proceed;
+ 'otherwise, return a #REF! error immediately - this avoids Excel
+ 'displaying dialogs when the referenced file doesn't exist
+ '-----------------------------------------------------------------
+ Dim xlapp As Object, xlwb As Workbook
+ Dim b As String, r As Range, C As Range, n As Long
+ '** begin 2004-05-30 changes **
+
+'** begin 2004-05-28 changes **
+ '** begin 2004-03-25 changes **
+ n = InStrRev(xref, "\")
+ If n > 0 Then
+ If Mid(xref, n, 2) = "\[" Then
+ b = Left(xref, n)
+ n = InStr(n + 2, xref, "]") - n - 2
+ If n > 0 Then b = b & Mid(xref, Len(b) + 2, n)
+ Else
+ n = InStrRev(Len(xref), xref, "!")
+ If n > 0 Then b = Left(xref, n - 1)
+ End If
+
+'** key 2004-05-28 addition **
+ If Left(b, 1) = "'" Then b = Mid(b, 2)
+ On Error Resume Next
+ If n > 0 Then If Dir(b) = "" Then n = 0
+ Err.Clear
+ On Error GoTo 0
+ End If
+
+If n <= 0 Then
+ pull = CVErr(xlErrRef)
+ Exit Function
+ End If
+ '** end 2004-03-25 changes **
+ '** end 2004-05-28 changes **
+ pull = Evaluate(xref)
+
+'** key 2004-05-30 addition **
+ If IsArray(pull) Then Exit Function
+ '** end 2004-05-30 changes **
+
+If CStr(pull) = CStr(CVErr(xlErrRef)) Then
+ On Error GoTo CleanUp 'immediate clean-up at this point
+
+Set xlapp = CreateObject("Excel.Application")
+ Set xlwb = xlapp.Workbooks.Add 'needed by .ExecuteExcel4Macro
+
+On Error Resume Next 'now clean-up can wait
+
+n = InStr(InStr(1, xref, "]") + 1, xref, "!")
+ b = Mid(xref, 1, n)
+
+Set r = xlwb.Sheets(1).Range(Mid(xref, n + 1))
+
+If r Is Nothing Then
+ pull = xlapp.ExecuteExcel4Macro(xref)
+
+Else
+ For Each C In r
+ C.Value = xlapp.ExecuteExcel4Macro(b & C.Address(1, 1, xlR1C1))
+ Next C
+
+pull = r.Value
+
+End If
+
+CleanUp:
+ If Not xlwb Is Nothing Then xlwb.Close 0
+ If Not xlapp Is Nothing Then xlapp.Quit
+ Set xlapp = Nothing
+
+End If
+
+End Function
+ '----- end VBA -----

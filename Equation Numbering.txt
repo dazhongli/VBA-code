@@ -1,0 +1,490 @@
+'*** Copy and paste everything below this line to  Word 2007's View->Macros->View Macros->Edit.
+'*** if the "Edit" button is grayed out, you can create a dummy macro and then edit it.
+
+
+' Equation and Theorem Number Manager for office 2007
+'
+' (c) Dong Yu (http://research.microsoft.com/~dongyu/) 2007
+'
+' Last Updated - 2/28/2007
+'
+' These macros are provided AS IS. You can copy it, use it, and distribute it as long as
+' this statement and the following usage instructions are not removed.
+'
+' Special Thanks to Murray Sargent and Andrei Burago in the Microsoft Office team for the valuable discussions
+' and suggestions.
+'
+' Usage instruction:
+'
+' *** installation ***
+' (1) Copy and paste all the macros into Word 2007's View->Macros->View Macros->Edit
+' (2) Right click the menu bar and select customize Quick Access Bar
+' (3) Select "Macros" in the "choose commands from" text box.
+' (4) Select IncreaseChapterNumber, InsertNumberedEquation,InsertEquationNumber,
+'         InsertEquationNumberWithChapter,InsertTheoremNumber, InsertTheoremNumberWithChapter
+'         InsertNumberReference, UpdateAllNumbers, CenterAllEquations, and LeftAlignAllEquations
+'         from the left pane and add them to the right pane
+' (5) You can modify the text and the icons of a macro by selecting the macro and click "modify".
+'         It's better to choose different icons for different macros and use simpler names
+' (6) Click ok and you should see new icons in the ribbon.
+'
+' *** Usage ***
+' NOTE: Make sure the table's "View GridLines" (under the Home menu) is ON.
+' (1) To insert a numbered equation, click the InsertNumberedEquation marco.
+' NOTE: The equations will be aligned based on the last choice you have made. By default equations are center-aligned.
+' NOTE: By default, the inserted equation number is in the format of (1). If you want (1.1) format
+'         you can delete the equation number and then click the InsertEquationNumberWithChapter macro
+'         subsequent equations inserted will have the new equation number format.
+' NOTE: If you want to insert an equation without number, you should insert with the macro and remove the
+'         equation number for better formatting later on.
+' NOTE: The theorem number and the equation number will use the same format, i.e., either all without
+'         the chapter number or all with the chapter number.
+' (2) To center-align all equations, click the CenterAllEquations marco.
+' (3) To left-align all equations, click the LeftAlignAllEquations macro. You will be prompted for the left margin.
+' (4) To insert an equation number in the format of (1) (2), etc, click the InsertEquationNumber marco
+' (5) To insert an equation number in the format of (1.1) (1.2), etc, click the
+'         InsertEquationNumberWithChapter macro.
+' (6) To insert a theorem number without a chapter number, click the InsertTheoremNumber marco
+' (7) To insert an theorem number with a chapter number,click the InsertTheoremNumberWithChapter macro.
+' (8) To increase the chapter number by one, click the IncreaseChapterNumber macro. You should only
+'         insert it in front of the chapter title. If you have clicked this macro too many times, you can
+'         turn on the visi (i.e., type CTRL + *) and look for the right-up arrow. Double click the arrow
+'         to remove the extra chapter-number-increase mark.
+' (9) To reference an equation or theorem number, click the InsertNumberReference macro and then double click
+'         the equation or theorem number to be referenced
+' (10) To update all equation and theorem numbers, click the UpdateAllNumbers macro
+
+
+Global EquationInsertionPoint As Long
+
+Sub InsertEquationNumber()
+    On Error GoTo Err
+    
+    Application.ScreenUpdating = False
+
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="MACROBUTTON NumberReference \* MERGEFORMAT "
+    Selection.TypeText Text:="("
+        
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ EquationNumber \n \* Arabic \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    Selection.TypeText Text:=")"
+    Selection.Delete Unit:=wdCharacter, Count:=1
+    
+    'update all numbers
+    UpdateAllNumbers
+    SetEquationNumberFormat "EquationNumberOnly"
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Sub InsertTheoremNumber()
+    On Error GoTo Err
+    
+    Application.ScreenUpdating = False
+
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="MACROBUTTON NumberReference \* MERGEFORMAT "
+        
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ TheoremNumber \n \* Arabic \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    Selection.Delete Unit:=wdCharacter, Count:=1
+    
+    'update all numbers
+    UpdateAllNumbers
+    SetEquationNumberFormat "EquationNumberOnly"
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Sub IncreaseChapterNumber()
+    On Error GoTo Err
+
+    Application.ScreenUpdating = False
+
+    Dim msg As String
+    msg = "This will increase the chapter number by one. You should only use it once for each chapter " & _
+        "at the chapter title." & vbCrLf & vbCrLf & _
+        "To decrease the chapter number, you need to turn on the visi (i.e., type CTRL + *) " & _
+        "and look for the right-up arrow." & _
+        "Double click the arrow to remove the extra chapter-number-increase mark." & vbCrLf & vbCrLf & _
+        "Are you sure you want to insert a chapter-number-increase mark at the current location?"
+    If (MsgBox(msg, vbOKCancel) = vbCancel) Then
+        Exit Sub
+    End If
+    
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="MACROBUTTON RemoveChapterIncreaseMark \* MERGEFORMAT "
+        
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ EqnChapter \n \h \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    
+    'reset the equation number to 0
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ EquationNumber \r0 \h \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    
+    'reset the theorem number to 0
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ TheoremNumber \r0 \h \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    
+    Selection.Delete Unit:=wdCharacter, Count:=1
+    
+    Selection.InsertSymbol CharacterNumber:=246, Font:="Wingdings", Unicode:=False
+    Selection.MoveLeft Unit:=wdCharacter, Count:=1, Extend:=wdExtend
+    Selection.Font.Hidden = True
+    
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+
+    SetEquationNumberFormat "ChapterPlusEquationNumber"
+    
+    'update all numbers
+    UpdateAllNumbers
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Sub RemoveChapterIncreaseMark()
+    On Error GoTo Err
+
+    Application.ScreenUpdating = False
+
+    If MsgBox("Are you sure you want to remove the chapter-number-increase mark?", vbOKCancel) = vbCancel Then Exit Sub
+    
+    Selection.Delete
+    UpdateAllNumbers
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+
+Sub InsertEquationNumberWithChapter()
+    On Error GoTo Err
+    
+    Application.ScreenUpdating = False
+
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="MACROBUTTON NumberReference \* MERGEFORMAT "
+    
+    Selection.TypeText Text:="("
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ EqnChapter \c \* Arabic \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    Selection.TypeText Text:="."
+        
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ EquationNumber \n \* Arabic \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    Selection.TypeText Text:=")"
+    Selection.Delete Unit:=wdCharacter, Count:=1
+
+    'update all numbers
+    UpdateAllNumbers
+    
+    SetEquationNumberFormat "ChapterPlusEquationNumber"
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Sub InsertTheoremNumberWithChapter()
+    On Error GoTo Err
+    
+    Application.ScreenUpdating = False
+
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="MACROBUTTON NumberReference \* MERGEFORMAT "
+    
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ EqnChapter \c \* Arabic \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    Selection.TypeText Text:="."
+        
+    Selection.Fields.Add Range:=Selection.Range, Type:=wdFieldEmpty, _
+        PreserveFormatting:=False
+    Selection.TypeText Text:="SEQ TheoremNumber \n \* Arabic \* MERGEFORMAT"
+    Selection.MoveRight Unit:=wdCharacter, Count:=2
+    Selection.Delete Unit:=wdCharacter, Count:=1
+
+    'update all numbers
+    UpdateAllNumbers
+    
+    SetEquationNumberFormat "ChapterPlusEquationNumber"
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Sub UpdateAllNumbers()
+    On Error GoTo Err
+    
+    Application.ScreenUpdating = False
+
+    Dim loc
+    loc = Selection.start
+    
+    Selection.WholeStory
+    Selection.Fields.Update
+    Selection.start = loc
+    Selection.End = loc
+    
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Sub InsertNumberReference()
+    EquationInsertionPoint = Selection.start
+    'MsgBox "Double click the equation number to be referenced."
+End Sub
+
+Sub NumberReference()
+    On Error GoTo Err
+    
+    Dim referenceItem
+    If (EquationInsertionPoint < 0) Then Exit Sub
+    Dim bookMarkName
+    bookMarkName = AddNumberBookMark
+    Selection.start = EquationInsertionPoint
+    Selection.End = EquationInsertionPoint
+    
+    Selection.CopyFormat
+    
+    Selection.InsertCrossReference "bookmark", wdContentText, bookMarkName, True, False
+    
+    Selection.start = EquationInsertionPoint
+    Selection.ClearFormatting
+    Selection.PasteFormat
+    Selection.Collapse Direction:=wdCollapseEnd
+    
+    EquationInsertionPoint = -1
+    Exit Sub
+Err:
+    MsgBox Err.Description
+End Sub
+
+Sub EquationReference() 'make it backward compatible with old version of this macro set
+    NumberReference
+End Sub
+
+Sub InsertNumberedEquation()
+    InsertEquation ActiveDocument.OMathJc
+End Sub
+
+Sub LeftAlignAllEquations()
+    On Error GoTo Err
+    
+    ActiveDocument.OMathJc = wdOMathJcLeft
+    
+    Dim value
+    value = InputBox(prompt:="Please set the left margin (in inches)", _
+        Title:="Left Align All Equations", Default:=PointsToInches(GetEquationLeftMargin))
+    
+    If (value <> "") Then
+        SetEquationLeftMargin value
+        ActiveDocument.OMathLeftMargin = GetEquationLeftMargin
+    End If
+    
+    Exit Sub
+Err:
+    MsgBox Err.Description
+End Sub
+
+Sub CenterAllEquations()
+    On Error GoTo Err
+    
+    ActiveDocument.OMathJc = wdOMathJcCenter
+    ActiveDocument.OMathLeftMargin = InchesToPoints(0.5)
+    
+    Exit Sub
+Err:
+    MsgBox Err.Description
+End Sub
+
+Private Sub InsertEquation(align As WdOMathJc)
+    On Error GoTo Err
+    
+    Application.ScreenUpdating = False
+
+    Dim equationCell As Cell
+    
+    Application.ScreenUpdating = False
+
+    Selection.TypeText Text:=" "  'work around the problem of table auto merge
+
+    'create the table
+    ActiveDocument.Tables.Add Range:=Selection.Range, NumRows:=1, NumColumns:= _
+        2, DefaultTableBehavior:=wdWord9TableBehavior, AutoFitBehavior:= _
+        wdAutoFitWindow
+    
+    
+    With Selection.Tables(1)
+        If .Style <> "Table Grid" Then
+            .Style = "Table Grid"
+        End If
+        .ApplyStyleHeadingRows = False
+        .ApplyStyleLastRow = False
+        .ApplyStyleFirstColumn = False
+        .ApplyStyleLastColumn = False
+        .ApplyStyleRowBands = False
+        .ApplyStyleColumnBands = False
+        
+        .Borders(wdBorderLeft).LineStyle = wdLineStyleNone
+        .Borders(wdBorderRight).LineStyle = wdLineStyleNone
+        .Borders(wdBorderTop).LineStyle = wdLineStyleNone
+        .Borders(wdBorderBottom).LineStyle = wdLineStyleNone
+        .Borders(wdBorderVertical).LineStyle = wdLineStyleNone
+        .Borders(wdBorderDiagonalDown).LineStyle = wdLineStyleNone
+        .Borders(wdBorderDiagonalUp).LineStyle = wdLineStyleNone
+        .Borders.Shadow = False
+        
+        .TopPadding = 3 'you can change the padding to what ever you want
+        .BottomPadding = 0 'you can change the padding to what ever you want
+        .LeftPadding = InchesToPoints(0)
+        .RightPadding = InchesToPoints(0)
+        
+        .Spacing = 0
+        .AllowPageBreaks = True
+        .AllowAutoFit = True
+        
+        Dim totalWidth
+        totalWidth = .Columns(1).Width + .Columns(2).Width
+        .Columns(1).PreferredWidthType = wdPreferredWidthPoints
+        .Columns(1).PreferredWidth = totalWidth - InchesToPoints(0.5)
+        .Columns(1).Cells.VerticalAlignment = wdCellAlignVerticalCenter
+        .Columns(1).Select
+        Selection.ParagraphFormat.Alignment = wdAlignParagraphLeft
+        Selection.ParagraphFormat.LineSpacing = LinesToPoints(1.5)
+       
+        .Columns(2).PreferredWidthType = wdPreferredWidthPoints
+        .Columns(2).PreferredWidth = InchesToPoints(0.5)
+
+        .Columns(2).Cells.VerticalAlignment = wdCellAlignVerticalCenter
+        .Columns(2).Select
+        Selection.ParagraphFormat.Alignment = wdAlignParagraphRight
+        Selection.ParagraphFormat.LineSpacing = LinesToPoints(1.5)
+        Selection.MoveLeft Unit:=wdCharacter, Count:=1
+                
+        'insert equation number
+        If (GetEquationNumberFormat = "EquationNumberOnly") Then
+            InsertEquationNumber
+        Else
+            InsertEquationNumberWithChapter
+        End If
+    
+         'work around the problem of table auto merge
+        Set equationCell = .Columns(1).Cells(1)
+        .Columns(1).Cells(1).Select
+        Selection.MoveLeft Unit:=wdCharacter, Count:=3
+        Selection.Delete Unit:=wdCharacter, Count:=2
+        
+        'insert the equation itself
+        equationCell.Select
+        ActiveDocument.OMathJc = align
+        If (align = wdOMathJcLeft) Then
+            ActiveDocument.OMathLeftMargin = GetEquationLeftMargin
+        Else
+            ActiveDocument.OMathLeftMargin = .Columns(2).Width
+        End If
+       
+        Selection.MoveLeft Unit:=wdCharacter, Count:=1
+        Selection.OMaths.Add Range:=Selection.Range
+    End With
+
+    Application.ScreenUpdating = True
+    Exit Sub
+Err:
+    Application.ScreenUpdating = True
+    MsgBox Err.Description
+End Sub
+
+Private Function AddNumberBookMark()
+    On Error GoTo Err
+    
+    Dim name
+    
+    With ActiveDocument.Bookmarks
+        Do
+            name = Round(Rnd * 10000000000#)
+            name = "NumberRef" & name
+            If Not ActiveDocument.Bookmarks.Exists(name) Then Exit Do
+        Loop
+        .Add Range:=Selection.Range, name:=name
+    End With
+    AddNumberBookMark = name
+    Exit Function
+Err:
+    MsgBox Err.Description
+End Function
+
+Private Sub SetEquationNumberFormat(format As String)
+    On Error GoTo Err
+    ActiveDocument.CustomDocumentProperties("EquationNumberFormat") = format
+    Exit Sub
+Err:
+    ActiveDocument.CustomDocumentProperties.Add _
+        name:="EquationNumberFormat", LinkToContent:=False, value:=format, _
+        Type:=msoPropertyTypeString
+End Sub
+
+Private Function GetEquationNumberFormat()
+    On Error GoTo Err
+    GetEquationNumberFormat = ActiveDocument.CustomDocumentProperties("EquationNumberFormat")
+    Exit Function
+Err:
+    GetEquationNumberFormat = "EquationNumberOnly"
+End Function
+
+Private Sub SetEquationLeftMargin(margin) 'margin in inches
+    On Error GoTo Err
+    ActiveDocument.CustomDocumentProperties("EquationLeftMargin") = InchesToPoints(margin)
+    Exit Sub
+Err:
+    ActiveDocument.CustomDocumentProperties.Add _
+        name:="EquationLeftMargin", LinkToContent:=False, value:=InchesToPoints(margin), _
+        Type:=msoPropertyTypeNumber
+End Sub
+
+Private Function GetEquationLeftMargin()
+    On Error GoTo Err
+    GetEquationLeftMargin = ActiveDocument.CustomDocumentProperties("EquationLeftMargin")
+    Exit Function
+Err:
+    GetEquationLeftMargin = InchesToPoints(0.5)
+    SetEquationLeftMargin 0.5
+End Function

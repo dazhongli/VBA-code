@@ -1,0 +1,44 @@
+'This subroutine update the chart in each slide of the powerpoint
+ 
+Sub UpdateChartsInPPT()
+
+    Dim pptChart As Chart
+    Dim pptChartData As ChartData
+    Dim pptWorkbook As Object
+    Dim sld As Slide
+    Dim shp As Shape
+    Dim xlobject As Object
+    Set xlobject = CreateObject("Excel.application")
+    Dim PreFileName, CurrentFileName
+    PreFileName = "Null"
+    For Each sld In ActivePresentation.Slides
+        For Each shp In sld.Shapes
+            If shp.HasChart Then
+                shp.Chart.Select
+                Set pptChart = shp.Chart
+                Set pptChartData = pptChart.ChartData
+                pptChartData.Activate
+                Set pptWorkbook = pptChartData.Workbook
+                shp.Chart.Refresh
+                Debug.Print pptWorkbook.Name
+                On Error Resume Next
+                'update first link
+                On Error GoTo 0
+                If PreFileName = "Null" Then
+                    PreFileName = pptWorkbook.Name
+                ElseIf PreFileName <> pptWorkbook.Name Then
+                    Set xlobject = GetObject(ActivePresentation.Path & "\" & PreFileName)
+                    xlobject.Close True
+                    PreFileName = pptWorkbook.Name
+                Else
+                End If
+                'pptWorkbook.Close True
+            End If
+        Next
+    Next
+
+    Set pptWorkbook = Nothing
+    Set pptChartData = Nothing
+    Set pptChart = Nothing
+
+End Sub

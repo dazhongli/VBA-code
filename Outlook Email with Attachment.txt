@@ -1,0 +1,39 @@
+'This procesure send out an email using VBA code
+'Dazhong 27/08/2015 ambellstone@gmail.com
+
+Private Sub btn_email_function_Click()
+    Dim file_name As String
+    Dim OutApp As Object
+    Dim OutMail As Object
+    Set OutApp = CreateObject("Outlook.Application")
+    Set OutMail = OutApp.CreateItem(0)
+    On Error Resume Next
+    file_name = Environ("userprofile") & "\Dropbox\back up files\VBA Functions\" & Me.cmb_file_name.value
+    If Me.cmb_file_name.value = "" Then
+        MsgBox "No file has been selected"
+        Exit Sub
+    End If
+    
+    With OutMail
+        .To = "ambellstone@gmail.com"
+        .CC = ""
+        .BCC = ""
+        .Subject = "VBA Function - " & Me.cmb_file_name
+        .Body = "Hi," & Chr(10) & Chr(10) & "Captioned function is attached for your use." & Chr(10) & _
+                "I would much appreciate it if you could report me back any bugs or better version of the function." & Chr(10) & _
+                Chr(10) & _
+                "------------------------------------------------------------------------" & Chr(10) & _
+                "Please note that this Email is aumatically generated." & _
+                 Chr(10) & "Regards," & Chr(10) & "Dazhong Li"
+        
+        .Attachments.Add file_name
+        ' You can add other files by uncommenting the following line.
+        '.Attachments.Add ("C:\test.txt")
+        ' In place of the following statement, you can use ".Display" to
+        ' display the mail.
+        .display
+    End With
+    On Error GoTo 0
+    Set OutMail = Nothing
+    Set OutApp = Nothing
+end sub

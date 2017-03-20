@@ -1,0 +1,30 @@
+'Return a list of the files under a folder
+
+Function GetFileList(FileSpec As String) As Variant
+'   Returns an array of filenames that match FileSpec
+'   If no matching files are found, it returns False
+
+    Dim FileArray() As Variant
+    Dim FileCount As Integer
+    Dim FileName As String
+    
+    On Error GoTo NoFilesFound
+
+    FileCount = 0
+    FileName = Dir(FileSpec)
+    If FileName = "" Then GoTo NoFilesFound
+    
+'   Loop until no more matching files are found
+    Do While FileName <> ""
+        FileCount = FileCount + 1
+        ReDim Preserve FileArray(1 To FileCount)
+        FileArray(FileCount) = FileName
+        FileName = Dir()
+    Loop
+    GetFileList = FileArray
+    Exit Function
+
+'   Error handler
+NoFilesFound:
+    GetFileList = False
+End Function

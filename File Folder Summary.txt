@@ -1,0 +1,58 @@
+'These are sample codes that loop over all the files under the specified folder 
+'read the cell in each file, close them
+'Dazhong 22/02/2016' Revsion 1
+'Note that reference should be made to the window runtime script
+
+Sub update_summary_table()
+  Dim fso As Scripting.FileSystemObject
+    Set fso = New FileSystemObject
+    Dim workingfolder As String
+    Dim summary_wb, source_wb As Workbook
+    workingfolder = ThisWorkbook.Path
+    Set summary_wb = ThisWorkbook
+    Dim counter As Integer
+    counter = 2
+    ThisWorkbook.Sheets("Summary").Range("A2:E100").ClearContents
+    For Each fl In fso.GetFolder(workingfolder).Files 'loop over all files under the source folder
+        If fso.GetExtensionName(fl.Name) <> "xlsm" Then 'skip it if it's not an xlsm file
+            GoTo next_file
+        End If
+        Application.ScreenUpdating = False 'disable screen update
+        If WorkbookIsOpen(fl.Name) Then
+            Set source_wb = Workbooks(fl.Name)
+        Else
+            Set source_wb = Workbooks.Open(workingfolder & "\" & fl.Name)
+        End If
+        ActiveWindow.Visible = False ' hide the source sheets
+        Application.ScreenUpdating = True ' enable screen update
+        ThisWorkbook.Sheets("Summary").Cells(counter, 1) = FileName_wo_ext(fl.Name)
+        On Error GoTo Error_handler
+        'copy the the data below to the summary sheet
+        ThisWorkbook.Sheets("Summary").Cells(counter, 2) = source_wb.Sheets("Asaoka Curve Fitting").Range("B16")
+        ThisWorkbook.Sheets("Summary").Cells(counter, 3) = source_wb.Sheets("Asaoka Curve Fitting").Range("B11")
+        ThisWorkbook.Sheets("Summary").Cells(counter, 4) = source_wb.Sheets("Asaoka Curve Fitting").Range("B12")
+        ThisWorkbook.Sheets("Summary").Hyperlinks.Add Anchor:=ThisWorkbook.Sheets("Summary").Cells(counter, 1), Address:=fl.Name, _
+        TextToDisplay:=FileName_wo_ext(fl.Name)
+        counter = counter + 1
+        source_wb.Close False
+next_file:
+    Next fl
+Error_handler:
+    MsgBox "Done!"
+  End Sub
+
+Private Function WorkbookIsOpen(wbname) As Boolean
+'   Returns TRUE if the workbook is open
+    Dim x As Workbook
+    On Error Resume Next
+    Set x = Workbooks(wbname)
+    If Err = 0 Then WorkbookIsOpen = True _
+        Else: WorkbookIsOpen = False
+End Function
+
+'This function returns the clean filename without an ext
+Function FileName_wo_ext(filename As String)
+    Dim i As Integer
+    i = InStr(filename, ".")
+    FileName_wo_ext = Left(filename, i - 1)
+End Function

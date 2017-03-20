@@ -1,0 +1,3 @@
+Function open_folder_explorer( foldername  as string)
+    Shell "C:\WINDOWS\explorer.exe """ & foldername & "", vbNormalFocus
+End Function

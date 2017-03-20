@@ -1,0 +1,78 @@
+Option Explicit
+Function isletter(ByVal r As String) As Boolean
+    Dim x As String
+    x = UCase(r)
+    On Error GoTo Error_handler
+    isletter = Asc(x) > 64 And Asc(x) < 91
+    Exit Function
+Error_handler:
+    isletter = False
+End Function
+
+Function isnumber(ByVal r As String) As Boolean
+    On Error GoTo Error_handler
+    isnumber = Asc(r) > 47 And Asc(r) < 58
+    Exit Function
+Error_handler:
+    isnumber = False
+End Function
+
+Function isdollarsign(ByVal r As String) As Boolean
+    On Error GoTo Error_handler
+    isdollarsign = Asc(r) = 36
+    Exit Function
+Error_handler:
+    isdollarsign = False
+End Function
+
+Function show_numbers_in_formula(x As Range)
+    Application.Volatile
+    Dim str_formula, str_formula_number As String
+    str_formula = x.Formula
+    str_formula_number = str_formula
+    Dim i As Integer
+    i = 1
+    Do While i < Len(str_formula)
+        Dim str1, str2 As String
+        str1 = Mid(str_formula, i, 1)
+        If isletter(str1) Or isdollarsign(str1) Then
+            Dim j As Integer
+            j = i
+            str2 = Mid(str_formula, j + 1, 1)
+            Do While isletter(str2) Or isnumber(str2) Or isdollarsign(str2)
+                str1 = str1 + str2
+                j = j + 1
+                str2 = Mid(str_formula, j + 1, 1)
+            Loop
+            ' we have completed finding a number
+            ' let's replace it with it's vlaue
+            Dim val As Variant
+            If str1 = "PI" Then
+                str_formula_number = Replace(str_formula_number, str1 + "()", 3.14)
+            ElseIf isnumber(Right(str1, 1)) <> True Then
+                GoTo next_line
+            Else
+                val = Application.Cells.Worksheet.Range(str1)
+                Dim cell_format As String
+                cell_format = Application.Cells.Worksheet.Range(str1).NumberFormat
+                str_formula_number = Replace(str_formula_number, str1, Format(val, cell_format))
+'                str_formula_number = Replace(str_formula_number, str1, val)
+            End If
+next_line:
+            i = j
+        End If
+        i = i + 1
+    Loop
+        ' we do some formating below
+    str_formula_number = Replace(str_formula_number, "+", " + ")
+    str_formula_number = Replace(str_formula_number, "-", " - ")
+    str_formula_number = Replace(str_formula_number, "*", " x ")
+    str_formula_number = Replace(str_formula_number, "/", " / ")
+    str_formula_number = Replace(str_formula_number, "=", "")
+    str_formula_number = Replace(str_formula_number, "_)", "")
+    show_numbers_in_formula = str_formula_number
+
+End Function
+
+
+

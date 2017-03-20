@@ -1,0 +1,559 @@
+Option Compare Database
+Option Explicit
+
+Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByVal Destination As Long, ByVal Source As Long, ByVal Length As Integer)
+
+'----------------------------------
+'This array holds the values of the Matrix
+Private matrixArray() As Double
+
+'----------------------------------
+'Shared recursive descent parsing variables
+Private tempMatrixString As String
+Private look As String
+
+Public Sub Class_Initialize()
+
+End Sub
+
+'************************************************
+'* Accessors and Utility Functions *
+'***********************************
+
+Public Property Get Value(r As Long, c As Long) As Double
+
+    CheckDimensions
+
+    Value = matrixArray(r, c)
+End Property
+
+Public Property Let Value(r As Long, c As Long, val As Double)
+
+    CheckDimensions
+
+    matrixArray(r, c) = val
+End Property
+
+Public Property Get Rows() As Long
+    If GetDims(matrixArray) = 0 Then
+        Rows = 0
+    Else
+        Rows = UBound(matrixArray, 1) + 1
+    End If
+End Property
+
+Public Property Get Cols() As Long
+    If GetDims(matrixArray) = 0 Then
+        Cols = 0
+    Else
+        Cols = UBound(matrixArray, 2) + 1
+    End If
+End Property
+
+Public Sub LoadMatrixString(str As String)
+    tempMatrixString = str
+    ParseMatrix str
+    tempMatrixString = ""
+    look = ""
+End Sub
+
+Public Sub Resize(Rows As Long, Cols As Long, Optional blPreserve As Boolean = False)
+    Dim tempMatrix As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    If blPreserve Then
+
+        CheckDimensions
+
+        Set tempMatrix = Me.Clone
+        ReDim matrixArray(0 To Rows - 1, 0 To Cols - 1)
+        For r = 0 To MinLongs(tempMatrix.Rows, Me.Rows) - 1
+            For c = 0 To MinLongs(tempMatrix.Cols, Me.Cols) - 1
+                Value(r, c) = tempMatrix.Value(r, c)
+            Next
+        Next
+    Else
+        ReDim matrixArray(0 To Rows - 1, 0 To Cols - 1)
+    End If
+
+End Sub
+
+Public Function Clone() As Matrix
+    Dim mresult As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    CheckDimensions
+
+    Set mresult = New Matrix
+    mresult.Resize Me.Rows, Me.Cols
+    For r = 0 To Me.Rows - 1
+        For c = 0 To Me.Cols - 1
+            mresult.Value(r, c) = Me.Value(r, c)
+        Next
+    Next
+    Set Clone = mresult
+End Function
+
+Public Function ToString() As String
+    Dim str As String
+    Dim r As Long
+    Dim c As Long
+    Dim tempRow() As String
+    Dim tempRows() As String
+    ReDim tempRow(0 To Me.Cols - 1)
+    ReDim tempRows(0 To Me.Rows - 1)
+
+
+    If Not GetDims(matrixArray) = 0 Then 'Need to check if array is empty
+        For r = 0 To Me.Rows - 1
+            For c = 0 To Me.Cols - 1
+                tempRow(c) = Me.Value(r, c)
+            Next
+            tempRows(r) = "[" & Join(tempRow, ", ") & "]"
+        Next
+        ToString = "[" & Join(tempRows, vbCrLf) & "]"
+    Else
+        ToString = ""
+    End If
+End Function
+
+'***********************************************************
+'* Matrix Operations *
+'*********************
+
+Public Function Add(m As Matrix) As Matrix
+    Dim mresult As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    CheckDimensions
+
+    If m.Rows = Me.Rows And m.Cols = Me.Cols Then
+        Set mresult = New Matrix
+        mresult.Resize Me.Rows, Me.Cols
+        For r = 0 To Me.Rows - 1
+            For c = 0 To Me.Cols - 1
+                mresult.Value(r, c) = Me.Value(r, c) + m.Value(r, c)
+            Next
+        Next
+    Else
+        Err.Raise vbObjectError + 1, "Matrix.Add", "Could not Add matrices: the Rows and Columns must be the same. The left matrix is (" & Me.Rows & ", " & Me.Cols & ") and the right matrix is (" & m.Rows & ", " & m.Cols & ")."
+    End If
+    Set Add = mresult
+End Function
+
+Public Function Subtract(m As Matrix) As Matrix
+    Dim mresult As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    CheckDimensions
+
+    If m.Rows = Me.Rows And m.Cols = Me.Cols Then
+        Set mresult = New Matrix
+        mresult.Resize Me.Rows, Me.Cols
+        For r = 0 To Me.Rows - 1
+            For c = 0 To Me.Cols - 1
+                mresult.Value(r, c) = Me.Value(r, c) - m.Value(r, c)
+            Next
+        Next
+    Else
+        Err.Raise vbObjectError + 2, "Matrix.Subtract", "Could not Subtract matrices: the Rows and Columns must be the same. The left matrix is (" & Me.Rows & ", " & Me.Cols & ") and the right matrix is (" & m.Rows & ", " & m.Cols & ")."
+    End If
+    Set Subtract = mresult
+End Function
+
+Public Function Multiply(m As Matrix) As Matrix
+    Dim mresult As Matrix
+    Dim i As Long
+    Dim j As Long
+    Dim n As Long
+
+    CheckDimensions
+
+    If Me.Cols = m.Rows Then
+        Set mresult = New Matrix
+        mresult.Resize Me.Rows, m.Cols
+        For i = 0 To Me.Rows - 1
+            For j = 0 To m.Cols - 1
+                For n = 0 To Me.Cols - 1
+                    mresult.Value(i, j) = mresult.Value(i, j) + (Me.Value(i, n) * m.Value(n, j))
+                Next
+            Next
+        Next
+    Else
+        Err.Raise vbObjectError + 3, "Matrix.Multiply", "Could not Subtract matrices: the Columns of the left matrix and Rows of the right must be the same. The left matrix has " & Me.Cols & " Columns and the right matrix has " & m.Rows & " Rows."
+    End If
+
+    Set Multiply = mresult
+
+End Function
+
+Public Function ScalarMultiply(scalar As Double) As Matrix
+    Dim mresult As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    CheckDimensions
+
+    Set mresult = New Matrix
+    mresult.Resize Me.Rows, Me.Cols
+    For r = 0 To Me.Rows - 1
+        For c = 0 To Me.Cols - 1
+            mresult.Value(r, c) = Me.Value(r, c) * scalar
+        Next
+    Next
+
+    Set ScalarMultiply = mresult
+
+End Function
+
+Public Function Augment(m As Matrix) As Matrix
+    Dim mresult As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    CheckDimensions
+
+
+    If Me.Rows = m.Rows Then
+        Set mresult = New Matrix
+        mresult.Resize Me.Rows, Me.Cols + m.Cols
+        For r = 0 To Me.Rows - 1
+            For c = 0 To Me.Cols - 1
+                mresult.Value(r, c) = Me.Value(r, c)
+            Next
+        Next
+
+        For r = 0 To Me.Rows - 1
+            For c = 0 To m.Cols - 1
+                mresult.Value(r, Me.Cols + c) = m.Value(r, c)
+            Next
+        Next
+    Else
+        Err.Raise vbObjectError + 4, "Matrix.Augment", "Could not Augment matrices: the matrices must have the same number of Rows. The left matrix has " & Me.Rows & " Rows and the right matrix has " & m.Rows & " Rows."
+    End If
+    Set Augment = mresult
+End Function
+
+Public Function Transpose() As Matrix
+    Dim mresult As Matrix
+    Dim r As Long
+    Dim c As Long
+
+    CheckDimensions
+
+    If Me.Rows = Me.Cols Then
+        Set mresult = New Matrix
+        mresult.Resize Me.Cols, Me.Rows
+        For r = 0 To Me.Rows - 1
+            For c = 0 To Me.Cols - 1
+                Me.Value(r, c) = mresult(c, r)
+            Next
+        Next
+    Else
+        Err.Raise vbObjectError + 5, "Matrix.Augment", "Could not Transpose matrix: the matrix must have the same number of Rows and Cols. The matrix is (" & Me.Rows & ", " & Me.Cols & ")."
+    End If
+    Set Transpose = mresult
+End Function
+
+Public Function RowReduce() As Matrix
+    Dim i As Long
+    Dim j As Long
+
+    CheckDimensions
+
+    'Row Echelon
+    Dim mresult As Matrix
+    Set mresult = Me.Clone
+
+    For i = 0 To mresult.Rows - 1
+        If Not mresult.Value(i, i) <> 0 Then
+            For j = i + 1 To mresult.Rows - 1
+                If mresult.Value(j, i) > 0 Then
+                    mresult.SwapRows i, j
+                    Exit For
+                End If
+            Next
+        End If
+
+        If mresult.Value(i, i) = 0 Then
+            Exit For
+        End If
+
+        mresult.ScaleRow i, 1 / mresult.Value(i, i)
+
+        For j = i + 1 To mresult.Rows - 1
+            mresult.AddScalarMultipleRow i, j, -mresult.Value(j, i)
+        Next
+    Next
+
+    'Backwards substitution
+
+    For i = IIf(mresult.Rows < mresult.Cols, mresult.Rows, mresult.Cols) - 1 To 1 Step -1
+        If mresult.Value(i, i) > 0 Then
+            For j = i - 1 To 0 Step -1
+                mresult.AddScalarMultipleRow i, j, -mresult.Value(j, i)
+            Next
+        End If
+    Next
+
+    Set RowReduce = mresult
+End Function
+
+
+'*************************************************************
+'* Elementary Row Operaions *
+'****************************
+
+Public Sub SwapRows(r1 As Long, r2 As Long)
+    Dim temp As Double
+    Dim c As Long
+
+    CheckDimensions
+
+    For c = 0 To Me.Cols - 1
+        temp = Me.Value(r1, c)
+        Me.Value(r1, c) = Me.Value(r2, c)
+        Me.Value(r2, c) = temp
+    Next
+End Sub
+
+Public Sub ScaleRow(row As Long, scalar As Double)
+    Dim c As Long
+
+    CheckDimensions
+
+    For c = 0 To Me.Cols - 1
+        Me.Value(row, c) = Me.Value(row, c) * scalar
+    Next
+End Sub
+
+Public Sub AddScalarMultipleRow(srcrow As Long, destrow As Long, scalar As Double)
+    Dim c As Long
+
+    CheckDimensions
+
+    For c = 0 To Me.Cols - 1
+        Me.Value(destrow, c) = Me.Value(destrow, c) + (Me.Value(srcrow, c) * scalar)
+    Next
+End Sub
+
+'************************************************************
+'* Parsing Functions *
+'*********************
+
+Private Sub ParseMatrix(strMatrix As String)
+    Dim arr() As Double
+    Dim c As Long
+    GetChar 1
+    Match "["
+    SkipWhite
+    If look = "[" Then
+        arr = ParseRow
+        Me.Resize 1, UBound(arr) + 1
+        'ReDim matrixArray(0 To UBound(arr), 0 To 0)
+        For c = 0 To Me.Cols - 1
+            Me.Value(0, c) = arr(c)
+        Next
+        SkipWhite
+        While look = ","
+            Match ","
+            SkipWhite
+            arr = ParseRow
+            Me.Resize Me.Rows + 1, Me.Cols, True
+
+            If UBound(arr) <> (Me.Cols - 1) Then
+                'Error jagged array
+                Err.Raise vbObjectError + 6, "Matrix.LoadMatrixString", "Parser Error - Jagged arrays are not supported: Row 0 has " & Me.Cols & " Cols, but Row " & Me.Rows - 1 & " has " & UBound(arr) + 1 & " Cols."
+            End If
+            For c = 0 To Me.Cols - 1
+                Me.Value(Me.Rows - 1, c) = arr(c)
+            Next
+            SkipWhite
+        Wend
+        Match "]"
+    ElseIf look = "]" Then
+        Match "]"
+    Else
+        MsgBox "Error"
+    End If
+    SkipWhite
+    If look <> "" Then
+        Err.Raise vbObjectError + 7, "Matrix.LoadMatrixString", "Parser Error - Unexpected Character: """ & look & """."
+    End If
+End Sub
+
+Private Function ParseRow() As Variant
+    Dim arr() As Double
+    Match "["
+    SkipWhite
+    ReDim arr(0 To 0)
+    arr(0) = ParseNumber
+    SkipWhite
+    While look = ","
+        Match ","
+        ReDim Preserve arr(0 To UBound(arr) + 1)
+        arr(UBound(arr)) = ParseNumber
+        SkipWhite
+    Wend
+    Match "]"
+    ParseRow = arr
+End Function
+
+Private Function ParseNumber() As Double
+    Dim strToken As String
+    If look = "-" Then
+        strToken = strToken & look
+        GetChar
+    End If
+    While IsDigit(look)
+        strToken = strToken & look
+        GetChar
+    Wend
+    If look = "." Then
+        strToken = strToken & look
+        GetChar
+        While IsDigit(look)
+            strToken = strToken & look
+            GetChar
+        Wend
+    End If
+
+    ParseNumber = CDbl(strToken)
+End Function
+
+'****************************************************************
+
+Private Sub GetChar(Optional InitValue)
+    Static i As Long
+    If Not IsMissing(InitValue) Then
+        i = InitValue
+    End If
+    If i <= Len(tempMatrixString) Then
+        look = Mid(tempMatrixString, i, 1)
+        i = i + 1
+    Else
+        look = ""
+    End If
+End Sub
+
+'****************************************************************
+'* Skip Functions (Parser) *
+'***************************
+
+Private Sub SkipWhite()
+    While IsWhite(look) Or IsEOL(look)
+        GetChar
+    Wend
+End Sub
+
+'****************************************************************
+'* Match/Expect Functions (Parser) *
+'***********************************
+
+Private Sub Match(char As String)
+    If look <> char Then
+        Expected """" & char & """"
+    Else
+        GetChar
+        SkipWhite
+    End If
+    Exit Sub
+
+End Sub
+
+Private Sub Expected(str As String)
+    'MsgBox "Expected: " & str
+    Err.Raise vbObjectError + 8, "Matrix.LoadMatrixString", "Parser Error - Expected: " & str
+End Sub
+
+'****************************************************************
+'* Character Class Functions (Parser) *
+'**************************************
+
+Private Function IsDigit(char As String) As Boolean
+
+    Dim charval As Integer
+    If char <> "" Then
+        charval = Asc(char)
+        If 48 <= charval And charval <= 57 Then
+            IsDigit = True
+        Else
+            IsDigit = False
+        End If
+    Else
+        IsDigit = False
+    End If
+
+End Function
+
+Private Function IsWhite(char As String) As Boolean
+
+    Dim charval As Integer
+    If char <> "" Then
+        charval = Asc(char)
+        If charval = 9 Or charval = 11 Or charval = 12 Or charval = 32 Or charval = 160 Then '160 because MS Exchange sucks
+            IsWhite = True
+        Else
+            IsWhite = False
+        End If
+    Else
+        IsWhite = False
+    End If
+
+End Function
+
+Private Function IsEOL(char As String) As Boolean
+    If char = Chr(13) Or char = Chr(10) Then
+        IsEOL = True
+    Else
+        IsEOL = False
+    End If
+End Function
+
+'*****************************************************************
+'* Helper Functions *
+'********************
+
+Private Sub CheckDimensions()
+    If GetDims(matrixArray) = 0 Then
+        'Error, uninitialized array
+        Err.Raise vbObjectError + 1, "Matrix", "Array has not been initialized"
+    End If
+End Sub
+
+Private Function GetDims(VarSafeArray As Variant) As Integer
+    Dim lpSAFEARRAY As Long
+    Dim lppSAFEARRAY As Long
+    Dim arrayDims As Integer
+
+    'This check ensures that the value inside the Variant is actually an array of some type
+    If (VarType(VarSafeArray) And vbArray) > 0 Then
+
+        'If the Variant contains an array, the pointer to the pointer to the array is located at VarPtr(VarSafeArray) + 8...
+        CopyMemory VarPtr(lppSAFEARRAY), VarPtr(VarSafeArray) + 8, 4&
+        '...and now dereference the pointer to pointer to get the actual pointer to the array...
+        CopyMemory VarPtr(lpSAFEARRAY), lppSAFEARRAY, 4&
+        '...which will be 0 if the array hasn't been initialized
+        If Not lpSAFEARRAY = 0 Then
+            'If it HAS been initialized, we can pull the number of dimensions directly from the pointer, since it's the first member in the SAFEARRAY struct
+            CopyMemory VarPtr(arrayDims), lpSAFEARRAY, 2&
+            GetDims = arrayDims
+        Else
+            GetDims = 0 'Array not initialized
+        End If
+    Else
+        GetDims = 0 'It's not an array... Type mismatch maybe?
+    End If
+End Function
+
+Private Function MinLongs(a As Long, b As Long) As Long
+    If a < b Then
+        MinLongs = a
+    Else
+        MinLongs = b
+    End If
+End Function

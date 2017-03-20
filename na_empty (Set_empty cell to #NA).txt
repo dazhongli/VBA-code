@@ -1,0 +1,16 @@
+'This function set all the empty cell to #NA, mainly for the plotting purposes
+Function na_empty(val As Variant) As Variant
+    If val = "" Then
+        na_empty = CVErr(xlErrNA)
+    Else
+        na_empty = val
+    End If
+End Function
+
+Function na_zero(val As Variant) As Variant
+    If val = 0 Then
+        na_zero = CVErr(xlErrNA)
+    Else
+        na_zero = val
+    End If
+End Function

@@ -1,0 +1,42 @@
+Sub update_data()
+    Application.DisplayAlerts = False
+    Dim fso As Scripting.FileSystemObject
+    Set fso = New Scripting.FileSystemObject
+    Dim wrkbooks As Workbook
+    Dim strfilename As String
+    Dim filenames(1 To 10) As String
+    filenames(1) = "PCB - filling n settlement (raw)"
+    filenames(2) = "Portion B - filling n settlement (raw)"
+    filenames(3) = "Portion C1a - filling n settlement (raw)"
+    filenames(4) = "Portion C1b - filling n settlement (raw)"
+    filenames(5) = "Portion C2a - filling n settlement (raw)"
+    filenames(6) = "Portion C2b - filling n settlement (raw)"
+    filenames(7) = "Portion C2c - filling n settlement (raw)"
+    filenames(8) = "Portion D - filling n settlement (raw)"
+    filenames(9) = "Portion E2 - filling n settlement (raw)"
+    Dim filelocnstr, strfilename_xlsx As String
+    filelocnstr = "Z:\Instrumentation Monitoring\settlement assessment\study of (8+1) prediction curves\PCB - filling n settlement (raw)\"
+    Dim i As Integer
+    For i = 1 To 9
+        Set wrkbooks = GetObject(filelocnstr & filenames(i) & ".xlsm")
+        wrkbooks.Application.Visible = True
+        wrkbooks.Save
+        If fso.FileExists(filelocnstr & "temp.xlsm") Then
+            fso.DeleteFile filelocnstr & "temp.xlsm"
+        End If
+        wrkbooks.SaveAs filelocnstr & "temp.xlsm"
+        wrkbooks.Close
+        Set wrkbooks = GetObject(filelocnstr & "temp.xlsm")
+        wrkbooks.Activate
+        Call BreakLinks
+        If fso.FileExists(filelocnstr & filenames(i) & ".xlsx") Then
+            fso.DeleteFile filelocnstr & filenames(i) & ".xlsx"
+        End If
+        wrkbooks.SaveAs filelocnstr & filenames(i) & ".xlsx", FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+        wrkbooks.Close
+        Set wrkbooks = Nothing
+    Next i
+    MsgBox "All Raw Data for Settlement Files updated!!"
+    Call update_VWP
+     Application.DisplayAlerts = True
+End Sub

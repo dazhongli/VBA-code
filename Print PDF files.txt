@@ -1,0 +1,65 @@
+'Print out the PDF under the older "./PDF
+'Dazhong
+
+
+Sub Print_PDF()
+  Dim fso As Scripting.FileSystemObject
+    Set fso = New FileSystemObject
+    Dim workingfolder As String
+    Dim summary_wb, source_wb As Workbook
+    workingfolder = ThisWorkbook.Path
+    Set summary_wb = ThisWorkbook
+    Dim filename As String
+    For Each fl In fso.GetFolder(workingfolder).Files 'loop over all files under the source folder\
+        Application.ScreenUpdating = False
+        If fso.GetExtensionName(fl.Name) <> "xlsm" Then 'skip it if it's not an xlsm file
+            GoTo next_file
+        End If
+        Application.StatusBar = counter - 1 & "th " & "Processing file - " & fl.Name
+        If InStr(1, fl.Name, "Summary") Then 'skip it if it's not an xlsm file
+            GoTo next_file
+        End If
+        If Not fso.FolderExists(workingfolder & "/PDF") Then 'if the "./PDF" does not exist, create one
+            fso.CreateFolder (workingfolder & "/PDF")
+        End If
+        filename = fl
+        filename = fso.GetFileName(filename)
+        If WorkbookIsOpen(filename) Then
+            Set source_wb = Workbooks(filename)
+        Else
+            Set source_wb = Workbooks.Open(ThisWorkbook.Path & "\" & filename, False, False)
+        End If
+            source_wb.Activate
+        Call save_sheets_as_PDF(source_wb.Sheets("Output"), workingfolder & "/PDF/", filename, False)
+        source_wb.Close False
+        Application.StatusBar = "Processing file - " & fl.Name
+    GoTo next_file
+    Application.ScreenUpdating = True
+    Exit Sub
+next_file:
+    Next fl
+Error_handler:
+  
+End Sub
+'This function save the file as a pdf file
+'filename is the clean filename without the path
+Sub save_sheets_as_PDF(print_range As Variant, target_location As String, saved_name As String, openaftersave As Boolean)
+        Dim i As Integer
+        i = InStr(saved_name, ".")
+        saved_name = Left(saved_name, i - 1) & ".pdf"
+        saved_name = target_location & saved_name
+        'Print PDF using the following lines
+        ChDir _
+        target_location
+        print_range.ExportAsFixedFormat Type:=xlTypePDF, filename:= _
+        saved_name, Quality:=xlQualityStandard, IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=openaftersave
+End Sub
+Private Function WorkbookIsOpen(wbname) As Boolean
+'   Returns TRUE if the workbook is open
+    Dim x As Workbook
+    On Error Resume Next
+    Set x = Workbooks(wbname)
+    If Err = 0 Then WorkbookIsOpen = True _
+        Else: WorkbookIsOpen = False
+End Function
+

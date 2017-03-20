@@ -1,0 +1,52 @@
+'---------------------------------------------------------------
+'This function calculate the averaged degree of consolidation given a time factor Tv
+'Based on Terzaghi's theory
+
+'Tv = cv*t/h^2 (Tv is known as the time factor)
+
+Function Terzaghi_Avg_DOC(Tv As Double)
+    Dim m As Integer
+    Dim percision As Double
+    Dim pi As Double
+    pi = 3.1415926
+    percision = 0.0001
+    Dim temp, temp_sum As Double
+    temp = 0
+    For m = 0 To 10000
+        upper_M = pi / 2 * (2 * m + 1)
+        temp = 2 / upper_M / upper_M * Exp(-1 * upper_M * upper_M * Tv)
+        If Abs(temp) < percision Then
+            Exit For
+        End If
+        temp_sum = temp + temp_sum
+    Next m
+    Terzaghi_Avg_DOC = 1 - temp_sum
+End Function
+
+
+'Vertical Drain
+'The function calculates the degree of consolidation using Barron's method
+'a - width of the band drain (mm) - typically 4mm
+'b - Thickness of band drain (mm) - typically 100mm
+'s - spacing of the band drain (m) - typically 1.0 ~ 1.5m
+'ch - coefficent of the consolidation (m2/year)
+'t - time of the consolidation
+'square - pattern of the grid, True for Square, False for triagular
+
+Function Barron_consolidation(a As Double, b As Double, s As Double, ch As Double, t As Double, square As Boolean)
+    Dim d_eq, pattern_factor, Dh, n, Fn, Th As Double
+    
+    If square Then
+        pattern_factor = 1.05
+    Else
+        pattern_factor = 1.02
+    End If
+    
+    d_eq = 2 * (a + b) / 3.1415926
+    'Soil Cylinder diameter
+    Dh = s * pattern_factor
+    n = Dh / d_eq * 1000
+    Fn = n * n / (n * n - 1) * Math.Log(n) - (3 * n * n - 1) / (4 * n * n)
+    Th = ch * t / (Dh * Dh)
+    Barron_consolidation = 1 - Math.Exp(-8# * Th / Fn)
+End Function
