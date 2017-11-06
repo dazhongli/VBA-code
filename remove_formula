@@ -1,0 +1,20 @@
+Sub RemoveFormula()
+' Remove Formula Macro
+    Application.DisplayAlerts = False
+    
+    Dim x As Integer
+    ThisWorkbook.Worksheets(1).Select
+    For x = 1 To ThisWorkbook.Worksheets.Count
+        Worksheets(x).Select (False)
+    Next x
+    Cells.Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    Application.DisplayAlerts = True
+End Sub
+
+
+
+

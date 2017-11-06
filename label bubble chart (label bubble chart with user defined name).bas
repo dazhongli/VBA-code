@@ -23,16 +23,19 @@ Sub label_bubble_chart()
         
         starting_row = row_number(0)
         end_row = row_number(1)
-        column_number = Sheets(1).Range(str_column & 1).Column
         On Error GoTo Error_handler
-        On Error GoTo 0
+        column_number = Sheets(1).Range(str_column & 1).Column
+        
         Dim j As Integer
         j = 1
         For j = 1 To ActiveChart.SeriesCollection(i).Points.Count
+            On Error Resume Next
             ActiveChart.SeriesCollection(i).Points(j).DataLabel.Formula = "=" & "'" & sheet_name & "'" & "!" & Sheets(sheet_name).Cells(starting_row + j - 1, column_number + offset_column).Address
+label_error:
         Next j
-    Next i
+        Next i
 Error_handler:
+
 End Sub
 Function FindN(sFindWhat As String, sInputString As String, N As Integer) As Integer
      Dim j As Integer
