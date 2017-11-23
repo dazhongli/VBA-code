@@ -11,7 +11,8 @@ Public Sub SaveMessageAsMsg()
   Dim sSender As String
   Dim enviro As String
   Dim sTargetFolder As String
-  sTargetFolder = BrowseForFolder("Z:\PUBLIC SHARE\Dazhong Li\")
+  sTargetFolder = InputBox("input the path to...")
+  sTargetFolder = sTargetFolder & "\"
   If sTargetFolder = "" Then
     GoTo End_sub
   End If
@@ -65,7 +66,7 @@ Function BrowseForFolder(strStartingFolder As Variant) As String
     Set objFolder = objShell.BrowseForFolder(WINDOW_HANDLE, "Select a folder:", NO_OPTIONS, strStartingFolder)
     If Not TypeName(objFolder) = "Nothing" Then
         Set objFolderItem = objFolder.self
-        BrowseForFolder = objFolderItem.Path & "\"
+        BrowseForFolder = objFolderItem.path & "\"
     Else
         BrowseForFolder = ""
     End If
@@ -95,3 +96,77 @@ Function BrowseForFile(Optional strStartingFolder As String) As String
 End Function
 
 
+Public Sub Adwin_email()
+Dim objOL As Outlook.Application
+Dim objMsg As Outlook.MailItem 'Object
+Dim objAttachments As Outlook.Attachments
+Dim objSelection As Outlook.Selection
+Dim i As Long
+Dim lngCount As Long
+Dim strFile As String
+Dim strFolderpath As String, strFolder As String
+Dim strDeletedFiles As String
+         
+Dim FSO As Object
+Set FSO = CreateObject("Scripting.FileSystemObject")
+ 
+strFolderpath = "Z:\Seawall\RECORDS\60-300kg underlayer deposition record at closing cell\Z. File shortcut for Daily Report updating\latest_data_from_survey_team\Edwin IE Data"
+   ' On Error Resume Next
+ 
+Set objOL = Application
+Set objSelection = objOL.ActiveExplorer.Selection
+ 
+' The attachment folder needs to exist
+' You can change this to another folder name of your choice
+ 
+ 
+    ' Check each selected item for attachments.
+    For Each objMsg In objSelection
+ 
+    ' Set the Attachment folder.
+    strFolder = strFolderpath & "\OLAttachments\"
+    
+    Set objAttachments = objMsg.Attachments
+    strFolder = strFolder & objMsg.SenderName & "\"
+    
+  ' if the sender's folder doesn't exist, create it
+ If Not FSO.FolderExists(strFolderpath) Then
+ FSO.CreateFolder (strFolderpath)
+ End If
+ 
+    lngCount = objAttachments.Count
+         
+    If lngCount > 0 Then
+     
+    ' Use a count down loop for removing items
+    ' from a collection. Otherwise, the loop counter gets
+    ' confused and only every other item is removed.
+     
+    For i = lngCount To 1 Step -1
+     
+    ' Get the file name.
+    strFile = objAttachments.Item(i).FileName
+     
+    ' Combine with the path to the folder.
+    strFile = strFolderpath & "\" & strFile
+     
+    ' Save the attachment as a file.
+    objAttachments.Item(i).SaveAsFile strFile
+        
+        Err.Clear
+    Next
+
+
+    End If
+     
+    Next
+    
+    open_folder_explorer (strFolderpath)
+ExitSub:
+   
+Set objAttachments = Nothing
+Set objMsg = Nothing
+Set objSelection = Nothing
+Set objOL = Nothing
+
+End Sub
